@@ -1,7 +1,9 @@
 import { openai, createOpenAI } from '@ai-sdk/openai';
 import { streamText } from 'ai';
 
-// H.R. 1 Bill Content - "One Big Beautiful Bill"
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 const HR1_BILL_CONTENT = `
 H.R. 1 – 'One Big Beautiful Bill'
 
@@ -227,12 +229,13 @@ export async function POST(req: Request) {
   try {
     const { messages, businessOverview, analysisMode } = await req.json();
 
-    // Get API key from environment variables
+    // Enhanced error handling for API key
     const apiKey = process.env.OPENAI_API_KEY;
     
     if (!apiKey) {
       console.error('OPENAI_API_KEY not found in environment variables');
-      return new Response('API key not configured', { status: 500 });
+      console.error('Available env vars:', Object.keys(process.env));
+      return Response.json({ error: 'API key not configured' }, { status: 500 });
     }
 
     const retrievedContent = retrieveRelevantSections(businessOverview);
@@ -292,6 +295,9 @@ Focus on actionable business intelligence rather than legal interpretation. Be s
     return result.toDataStreamResponse();
   } catch (error) {
     console.error('RAG Chat API error:', error);
-    return new Response('Internal server error', { status: 500 });
+    return Response.json({ 
+      error: 'Internal server error', 
+      details: error instanceof Error ? error.message : 'Unknown error' 
+    }, { status: 500 });
   }
 }
